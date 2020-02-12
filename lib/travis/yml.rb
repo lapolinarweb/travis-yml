@@ -6,9 +6,11 @@ require 'travis/yml/helper/obj'
 Obj.include Memoize, Travis::Yml::Helper::Obj
 
 require 'json'
+require 'travis/yml/config'
 require 'travis/yml/errors'
 require 'travis/yml/doc'
 require 'travis/yml/docs'
+require 'travis/yml/import'
 require 'travis/yml/parts'
 require 'travis/yml/matrix'
 require 'travis/yml/schema'
@@ -76,6 +78,10 @@ module Travis
     class << self
       include Memoize
 
+      def config
+        @config ||= Config.load
+      end
+
       def load(parts, opts = {})
         apply(Parts.load(parts), opts)
       end
@@ -96,7 +102,7 @@ module Travis
 
       def apply(value, opts = {})
         unexpected_format! unless value.is_a?(Hash)
-        opts = OPTS.merge(opts) unless ENV['env'] == 'test'
+        opts = OPTS.merge(opts) unless ENV['ENV'] == 'test'
         node = Doc.apply(expand, value, opts)
         node
       end
@@ -104,6 +110,10 @@ module Travis
       def matrix(config)
         config, data = config.values_at(:config, :data) if config[:config]
         Matrix.new(config, data)
+      end
+
+      def import(*args)
+        Import.new(*args)
       end
 
       def msg(msg)
